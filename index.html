@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+
+<title>ChessAI</title>
+
+<link rel="stylesheet" type="text/css" href="static/chessboard.min.css">
+
+<script src="static/jquery.min.js"></script>
+<script src="static/chessboard.min.js"></script>
+<script src="static/chessboard-0.3.0.js"></script>
+
+</head>
+<body style="font-size: 20px;">
+
+<a href="/selfplay">Play vs itself</a>
+<button onclick="newGame()">new game</button><br/>
+<div id="board" style="width: 800px"></div>
+
+<p></p>
+
+
+<script type="text/javascript">
+var board = ChessBoard('board', {
+  position: 'start',
+  draggable: true,
+  onDragStart: onDragStart,
+  onDrop: onDrop,
+  onSnapEnd: onSnapEnd
+});
+
+// do not pick up pieces if the game is over
+// only pick up pieces for the side to move
+var onDragStart = function(source, piece, position, orientation) {
+  if (game.game_over() === true ||
+      (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+      (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+    return false;
+  }
+};
+
+function onDrop(source, target, piece) {
+  var pn = piece.includes('b') ? piece.toLowerCase().substring(1, 2) : piece.substring(1, 2);
+  //console.log(source, target, piece, pn);
+  pn = piece.includes('P') ? '' : pn;
+  //console.log(pn)
+  var move = piece.includes("P") ? source + target : pn + target;
+  //console.log(move)
+  move = piece.includes("P") && target.includes("8") ? target.substring(0, 1) + "8Q" : move; // pawn promotion
+  //console.log(move)
+
+  $.get('/move', {'move': move}, function(r) {//jquery: $.get(URL,data,function(data,status,xhr),dataType)
+    if (r.includes("game over")) {
+      document.querySelector("p").innerText = "game over";
+    } else {
+      document.querySelector("p").innerText = "";
+      board.position(r);
+    }
+  });
+
+}
+
+// update the board position after the piece snap
+// for castling, en passant, pawn promotion
+var onSnapEnd = function() {
+  board.position(game.fen());
+};
+
+function newGame() {
+  $.get('/newgame', function(r) {
+    document.querySelector('p').innerText = '';
+    board.position(r);
+  });
+}
+
+</script>
+
+</body>
+</html>
