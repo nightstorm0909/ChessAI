@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import chess
 import numpy as np
+import util
 #from train import Net
 
 class State(object):
@@ -59,6 +60,10 @@ class State(object):
 		# 257 bits for the state
 		#pp = self.board.shredder_fen()		# to get the fen representation of the board given pgn board state
 		return state
+
+	def convert_to_input_planes(self):
+		#print(self.board.fen())
+		return util.canon_input_planes(self.board.fen())
 
 	def edges(self):
 		return list(self.board.legal_moves)
