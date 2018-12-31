@@ -8,4 +8,8 @@ for chess that can beat me.
 
 ## Requirements:
 
-Python3 modules: flask, pytorch, numpy, python-chess
+Python3 modules: flask, pytorch, numpy, python-chess, Keras
+
+## Usage:
+
+To-Do
