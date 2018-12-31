@@ -90,9 +90,9 @@ class ChessModel:
 		tensorboard_callback = TensorBoard(log_dir="./logs", batch_size = batch_size, histogram_freq = 1)
 		self.model.fit(x = self.state_array, y = [self.policy_array, self.value_array], batch_size = batch_size,
 			           epochs = self.epochs, shuffle = True, validation_split=0.02, callbacks=[tensorboard_callback])
-		self.model.save_weights(os.path.join("nets", "keras_model_weights_{}_{}e.h5".format(len(self.state_array), epochs)))
+		self.model.save_weights(os.path.join("nets", "keras_model_weights_{}_{}e.h5".format(len(self.state_array), self.epochs)))
 
 
-model = ChessModel(epochs = 100)
+model = ChessModel(epochs = 1)
 model.build()
 model.training()
