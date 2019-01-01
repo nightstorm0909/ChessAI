@@ -12,4 +12,15 @@ Python3 modules: flask, pytorch, numpy, python-chess, Keras
 
 ## Usage:
 
-To-Do
+To play against the classical model with no deep learning (with alpha beta algorithm),
+execute the following command:
+
+	* python play.py
+
+To play against the pytorch model, execute the following command:
+	
+	* python DLplay.py
+
+To play against the keras model, execute the following command:
+	
+	* python DLplay_keras.py
