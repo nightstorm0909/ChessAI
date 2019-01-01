@@ -198,9 +198,13 @@ def selfplay():
 
 @app.route("/move")
 def move():
-	print("here!!!!!1")
+	#print("here!!!!!1")
 	if not s.board.is_game_over():
-		move = request.args.get('move', default = "")
+		source = int(request.args.get('from', default=''))
+		target = int(request.args.get('to', default=''))
+		promotion = True if request.args.get('promotion', default='') == 'true' else False
+		move = s.board.san(chess.Move(source, target, promotion=chess.QUEEN if promotion else None))
+		#move = request.args.get('move', default = "")
 		if move is not None and move != "":
 			print("Human moves: ", move)
 			try:

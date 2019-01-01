@@ -24,23 +24,19 @@
 var board = ChessBoard('board', {
   position: 'start',
   draggable: true,
-  onDragStart: onDragStart,
-  onDrop: onDrop,
-  onSnapEnd: onSnapEnd
+  onDrop: onDrop
 });
 
-// do not pick up pieces if the game is over
-// only pick up pieces for the side to move
-var onDragStart = function(source, piece, position, orientation) {
-  if (game.game_over() === true ||
-      (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-      (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
-    return false;
-  }
-};
+
+
+var files = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7};
+function get_square(sq) {
+  return 8*(parseInt(sq.charAt(1)) - 1) + files[sq.charAt(0)];
+  // The parseInt() function parses a string and returns an integer.
+}
 
 function onDrop(source, target, piece) {
-  var pn = piece.includes('b') ? piece.toLowerCase().substring(1, 2) : piece.substring(1, 2);
+  /*var pn = piece.includes('b') ? piece.toLowerCase().substring(1, 2) : piece.substring(1, 2);
   //console.log(source, target, piece, pn);
   pn = piece.includes('P') ? '' : pn;
   //console.log(pn)
@@ -48,8 +44,8 @@ function onDrop(source, target, piece) {
   //console.log(move)
   move = piece.includes("P") && target.includes("8") ? target.substring(0, 1) + "8Q" : move; // pawn promotion
   //console.log(move)
-
   $.get('/move', {'move': move}, function(r) {//jquery: $.get(URL,data,function(data,status,xhr),dataType)
+    console.log(r);
     if (r.includes("game over")) {
       document.querySelector("p").innerText = "game over";
     } else {
@@ -57,14 +53,20 @@ function onDrop(source, target, piece) {
       board.position(r);
     }
   });
+  */
+  if(source == target) return
+
+  var promotion = piece.toLowerCase().charAt(1) == 'p' && parseInt(target.charAt(1)) == 8;
+  $.get('/move', {'from': get_square(source), 'to': get_square(target), 'promotion': promotion}, function(r) {
+    if (r.includes("game over")) {
+      document.querySelector('p').innerText = 'game over';
+    } else {
+      document.querySelector('p').innerText = '';
+      board.position(r);
+    }
+  });
 
 }
-
-// update the board position after the piece snap
-// for castling, en passant, pawn promotion
-var onSnapEnd = function() {
-  board.position(game.fen());
-};
 
 function newGame() {
   $.get('/newgame', function(r) {

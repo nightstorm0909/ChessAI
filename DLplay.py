@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 class Valuator(object):
 
 	def __init__(self):
-		vals = torch.load("nets/value.pth", map_location = lambda storage, loc: storage)
+		vals = torch.load("nets/value_1M_new.pth", map_location = lambda storage, loc: storage)
 		self.model = Net()
 		self.model.load_state_dict(vals)
 	
@@ -30,59 +30,7 @@ class Valuator(object):
 
 # A simple chess Value function
 MAXVAL = 10000
-class ClassicValuator(object):
-	values = {	chess.PAWN: 1,
-				chess.KNIGHT: 3,
-				chess.BISHOP: 3,
-				chess.ROOK: 5,
-				chess.QUEEN: 9,
-				chess.KING: 100}
-	def __init__(self):
-		self.reset()
-		self.memo = {}
 
-	def reset(self):
-		self.count = 0
-
-	# simple value function based on pieces
-	def __call__(self, s):
-		self.count += 1
-		key = s.key()
-		if key not in self.memo:
-			self.memo[key] = self.value(s)
-		return self.memo[key]
-
-	def value(self, s):
-		b = s.board
-		# Game over values
-		if b.is_game_over():
-			if b.result() == '1-0':
-				return MAXVAL
-			elif b.result() == '0-1':
-				return -MAXVAL
-			else:
-				return 0
-
-		# Piece Values
-		pm = b.piece_map()
-		val = 0.0
-		for x in pm:
-			tval = self.values[pm[x].piece_type]
-			if pm[x].color == chess.WHITE:
-				val += tval
-			else:
-				val -= tval
-
-		# Add a number of legal moves term for the value
-		bak = b.turn
-		b.turn = chess.WHITE
-		val += 0.1 * b.legal_moves.count()
-		b.turn = chess.BLACK
-		val -= 0.1 * b.legal_moves.count()
-
-		b.turn = bak
-
-		return val
 
 def computer_minimax(s, v, depth, a, b, big = False):
 	if depth >= 3 or s.board.is_game_over():
@@ -106,7 +54,7 @@ def computer_minimax(s, v, depth, a, b, big = False):
 	
 	move = sorted(isort, key = lambda x: x[0], reverse = s.board.turn)
 
-	if depth >= 2:
+	if depth >= 3:
 		move = move[:10]
 
 	for e in [x[1] for x in move]:
@@ -200,7 +148,11 @@ def selfplay():
 def move():
 	print("here!!!!!1")
 	if not s.board.is_game_over():
-		move = request.args.get('move', default = "")
+		source = int(request.args.get('from', default=''))
+		target = int(request.args.get('to', default=''))
+		promotion = True if request.args.get('promotion', default='') == 'true' else False
+		move = s.board.san(chess.Move(source, target, promotion=chess.QUEEN if promotion else None))
+		#move = request.args.get('move', default = "")
 		if move is not None and move != "":
 			print("Human moves: ", move)
 			try:
