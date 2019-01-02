@@ -15,117 +15,8 @@ import util
 
 # A simple chess Value function
 MAXVAL = 10000
-class ClassicValuator(object):
-	values = {	chess.PAWN: 1,
-				chess.KNIGHT: 3,
-				chess.BISHOP: 3,
-				chess.ROOK: 5,
-				chess.QUEEN: 9,
-				chess.KING: 100}
-	def __init__(self):
-		self.reset()
-		self.memo = {}
 
-	def reset(self):
-		self.count = 0
-
-	# simple value function based on pieces
-	def __call__(self, s):
-		self.count += 1
-		key = s.key()
-		if key not in self.memo:
-			self.memo[key] = self.value(s)
-		return self.memo[key]
-
-	def value(self, s):
-		b = s.board
-		# Game over values
-		if b.is_game_over():
-			if b.result() == '1-0':
-				return MAXVAL
-			elif b.result() == '0-1':
-				return -MAXVAL
-			else:
-				return 0
-
-		# Piece Values
-		pm = b.piece_map()
-		val = 0.0
-		for x in pm:
-			tval = self.values[pm[x].piece_type]
-			if pm[x].color == chess.WHITE:
-				val += tval
-			else:
-				val -= tval
-
-		# Add a number of legal moves term for the value
-		bak = b.turn
-		b.turn = chess.WHITE
-		val += 0.1 * b.legal_moves.count()
-		b.turn = chess.BLACK
-		val -= 0.1 * b.legal_moves.count()
-
-		b.turn = bak
-
-		return val
-
-def computer_minimax(s, v, depth, a, b, big = False):
-	if depth >= 3 or s.board.is_game_over():
-		return v(s)
-
-	# white is maximizing player
-	turn = s.board.turn
-	if turn == chess.WHITE:
-		ret = -MAXVAL
-	else:
-		ret = MAXVAL
-
-	if big:
-		bret = []
-
-	isort = []
-	for e in s.board.legal_moves:
-		s.board.push(e)
-		isort.append((v(s), e))
-		s.board.pop()
-	
-	move = sorted(isort, key = lambda x: x[0], reverse = s.board.turn)
-
-	if depth >= 3:
-		move = move[:10]
-
-	for e in [x[1] for x in move]:
-		s.board.push(e)
-		tval = computer_minimax(s, v, depth + 1, a, b)
-		s.board.pop()
-		if big:
-			bret.append((tval, e))
-		if turn == chess.WHITE:
-			ret = max(ret, tval)
-			a = max(a, ret)
-			if a >= b:
-				break	# b cut - off
-		else:
-			ret = min(ret, tval)
-			b = min(b, ret)
-			if a >= b:
-				break	# a cut - off
-	if big:
-		return ret, bret
-	else:
-		return ret
-
-def explore_leaves(s, v):
-	# Function to determine all the possible next moves along with their value for current state s
-	ret = []
-	v.reset()
-	#ret.append((computer_minimax(s, v), e))
-	t = time.time()
-	cval, ret = computer_minimax(s, v, depth = 0, a = -MAXVAL, b = MAXVAL, big = True)
-	print("Explored {} nodes with {} nodes/sec".format(v.count, int(v.count / (time.time() - t))))
-	return ret
-
-def random_move(s, v):
+def random_move(s):
 	t = time.time()
 	moves = s.edges()
 	print('No. of moves: ', len(moves))
@@ -153,12 +44,9 @@ from keras.models import load_model
 
 # Chess board and Engine
 s = State()
-v = ClassicValuator()
-#player = ChessModel()
-#player.load_model("keras_model_weights_30023_1e.h5")
 global graph
 graph = tf.get_default_graph()
-model = load_model(os.path.join("nets","keras_model_weights_348821_100e.h5"))
+model = load_model(os.path.join("nets","keras_model_weights_516719_100e.h5"))
 
 def to_svg(s):
 	return base64.b64encode(chess.svg.board(board = s.board).encode('utf-8')).decode('utf-8')
@@ -172,21 +60,6 @@ def hello():
 	ret = open("index.html").read()
 	return ret.replace('start', s.board.fen())
 
-def computer_move(s, v):
-	t = time.time()
-	move = sorted(explore_leaves(s, v), key = lambda x: x[0], reverse = s.board.turn)
-	print('Computer moves after ', time.time() - t, 'sec')
-
-	if len(move) == 0:
-		return
-
-	print("top 3 moves: ")
-	for i, m in enumerate(move[:3]):
-		print(" ", m)
-	print({True: 'WHITE', False: 'BLACK'}[s.board.turn], 'moves: ', move[0][1])
-	print(type(move[0][1]))
-	s.board.push(move[0][1])
-
 @app.route("/selfplay")
 def selfplay():
 	s = State()
@@ -194,7 +67,15 @@ def selfplay():
 
 	# self play
 	while not s.board.is_game_over():
-		computer_move(s, v)
+		with graph.as_default():
+			policy, value = predict_moves(model, s.board.fen())
+		if util.is_black_turn(s.board.fen()):
+			labels = util.flipped_uci_labels()
+		else:
+			labels = util.create_uci_labels()
+		if chess.Move.from_uci(labels[np.argmax(policy)]) in s.board.legal_moves:
+			pass
+		s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
 		ret += '<img width = 700 height = 700 src = "data:image/svg+xml;base64,%s" /></img><br/>' % to_svg(s)
 	print(s.board.result())
 	return ret
@@ -222,8 +103,11 @@ def move():
 					else:
 						labels = util.create_uci_labels()
 					print("value: ", value[0], "Policy: ", chess.Move.from_uci(labels[np.argmax(policy)]))
+					print("possible moves: ", chess.Move.from_uci(labels[np.argmax(policy)]) in (s.board.legal_moves))
+					if chess.Move.from_uci(labels[np.argmax(policy)]) in s.board.legal_moves:
+						pass
+						
 					s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
-				#computer_move(s, v)
 			except Exception:
 				traceback.print_exc()
 			
@@ -251,22 +135,41 @@ if __name__ == '__main__':
 		s = State()
 		while not s.board.is_game_over():
 			print(s.board)
-			computer_move(s, v)
-		#print(s.board.result())
+			with graph.as_default():
+				policy, value = predict_moves(model, s.board.fen())
+			if util.is_black_turn(s.board.fen()):
+				labels = util.flipped_uci_labels()
+			else:
+				labels = util.create_uci_labels()
+			if chess.Move.from_uci(labels[np.argmax(policy)]) in s.board.legal_moves:
+				pass
+			s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
+			
 		print('Result: ', {'1-0': 'WHITE', '0-1': 'BLACK', '1/2-1/2': 'Draw'}[s.board.result()], s.board.result())
 
 	elif os.getenv("RANDPLAY") is not None:
 		s = State()
 		result = []
-		for game in range(100):
+		for game in range(10):
 			while not s.board.is_game_over():
 				print(s.board)
-				computer_move(s, v)
+				if not s.board.is_game_over():
+					with graph.as_default():
+						policy, value = predict_moves(model, s.board.fen())
+					if util.is_black_turn(s.board.fen()):
+						labels = util.flipped_uci_labels()
+					else:
+						labels = util.create_uci_labels()
+					#print("value: ", value[0], "Policy: ", chess.Move.from_uci(labels[np.argmax(policy)]))
+					#print("possible moves: ", chess.Move.from_uci(labels[np.argmax(policy)]) in (s.board.legal_moves))
+					if chess.Move.from_uci(labels[np.argmax(policy)]) in s.board.legal_moves:
+						pass
+					s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
 				if s.board.is_game_over():
 					#print(s.board.turn)
 					break
-				random_move(s, v)
-				print('Game: ', game)
+				random_move(s)
+				print('Game: ', game + 1)
 			print('Result: ', {'1-0': 'WHITE', '0-1': 'BLACK', '1/2-1/2': 'DRAW'}[s.board.result()], s.board.result())
 			result.append({'1-0': 'COMPUTER', '0-1': 'RANDOM', '1/2-1/2': 'DRAW'}[s.board.result()])
 			s.board.reset()
