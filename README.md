@@ -27,6 +27,10 @@ To play against the keras model, execute the following command:
 
 ## Model Architecture
 
+pyTorch model architecture is given below.
+
+![pytorch architecture](https://github.com/nightstorm0909/ChessAI/blob/master/images/pyTorch_model.png)
+
 Keras model architecture is given below. It is a residual network with 5 residual
 modules.
 
