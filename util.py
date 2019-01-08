@@ -180,3 +180,11 @@ def valuefn(fen, absolute = False):
 	assert abs(v) < 1
 	#print(ans, tot, v, np.tanh(v * 3))
 	return np.tanh(v * 3) # arbitrary
+
+def cal_policy(labels, pol, legal_moves):
+	move_lookup = {chess.Move.from_uci(move): i for move, i in zip(labels, range(labels_n))}
+	policy = np.zeros(labels_n)
+	for move in legal_moves:
+		policy[move_lookup[move]] = pol[move_lookup[move]]
+	policy /= np.sum(policy)
+	return policy

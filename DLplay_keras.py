@@ -102,12 +102,13 @@ def move():
 						labels = util.flipped_uci_labels()
 					else:
 						labels = util.create_uci_labels()
-					print("value: ", value[0], "Policy: ", chess.Move.from_uci(labels[np.argmax(policy)]))
-					print("possible moves: ", chess.Move.from_uci(labels[np.argmax(policy)]) in (s.board.legal_moves))
-					if chess.Move.from_uci(labels[np.argmax(policy)]) in s.board.legal_moves:
-						pass
-						
-					s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
+					policy = util.cal_policy(labels, policy[0], list(s.board.legal_moves))
+					action = int(np.random.choice(range(util.labels_n), p = policy))
+					print("value: ", value[0], "Policy: ", chess.Move.from_uci(labels[action]))
+					#print("possible moves: ", chess.Move.from_uci(labels[np.argmax(policy)]) in (s.board.legal_moves))
+					
+					#s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
+					s.board.push(chess.Move.from_uci(labels[action]))
 			except Exception:
 				traceback.print_exc()
 			
@@ -141,10 +142,10 @@ if __name__ == '__main__':
 				labels = util.flipped_uci_labels()
 			else:
 				labels = util.create_uci_labels()
-			if chess.Move.from_uci(labels[np.argmax(policy)]) in s.board.legal_moves:
-				pass
-			s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
-			
+			policy = util.cal_policy(labels, policy[0], list(s.board.legal_moves))
+			action = int(np.random.choice(range(util.labels_n), p = policy))
+			s.board.push(chess.Move.from_uci(labels[action]))
+
 		print('Result: ', {'1-0': 'WHITE', '0-1': 'BLACK', '1/2-1/2': 'Draw'}[s.board.result()], s.board.result())
 
 	elif os.getenv("RANDPLAY") is not None:
@@ -160,11 +161,9 @@ if __name__ == '__main__':
 						labels = util.flipped_uci_labels()
 					else:
 						labels = util.create_uci_labels()
-					#print("value: ", value[0], "Policy: ", chess.Move.from_uci(labels[np.argmax(policy)]))
-					#print("possible moves: ", chess.Move.from_uci(labels[np.argmax(policy)]) in (s.board.legal_moves))
-					if chess.Move.from_uci(labels[np.argmax(policy)]) in s.board.legal_moves:
-						pass
-					s.board.push(chess.Move.from_uci(labels[np.argmax(policy)]))
+					policy = util.cal_policy(labels, policy[0], list(s.board.legal_moves))
+					action = int(np.random.choice(range(util.labels_n), p = policy))
+					s.board.push(chess.Move.from_uci(labels[action]))
 				if s.board.is_game_over():
 					#print(s.board.turn)
 					break
