@@ -21,9 +21,13 @@ To play against the pytorch model, execute the following command:
 	
 	* python DLplay.py
 
-To play against the keras model, execute the following command:
+To play against the keras model without Monte Carlo Tree Search, execute the following command (faster):
 	
 	* python DLplay_keras.py
+
+To play against the keras model with Monte Carlo Tree Search, execute the following command (slower):
+	
+	* python DLplay_keras_MCTS.py
 
 ## Model Architecture
 
@@ -32,6 +36,6 @@ pyTorch model architecture is given below.
 ![pytorch architecture](https://github.com/nightstorm0909/ChessAI/blob/master/images/pyTorch_model.png)
 
 Keras model architecture is given below. It is a residual network with 5 residual
-modules.
+modules. It has both policy and value network.
 
 ![keras architecture](https://github.com/nightstorm0909/ChessAI/blob/master/images/model.png)
