@@ -134,8 +134,8 @@ def canon_input_planes(fen):
 	fen = maybe_flip_fen(fen, is_black_turn(fen)) # Flips the board if it is black's turn
 	return all_input_planes(fen)    # returns input for model of shape (18, 8, 8)
 
-board = chess.Board()
-result = canon_input_planes(board.fen())
+#board = chess.Board()
+#result = canon_input_planes(board.fen())
 
 ####################### Supervised learning actions ###################################
 labels = create_uci_labels()
@@ -181,6 +181,7 @@ def valuefn(fen, absolute = False):
 	#print(ans, tot, v, np.tanh(v * 3))
 	return np.tanh(v * 3) # arbitrary
 
+########################## Policy Renormalization #######################################
 def cal_policy(labels, pol, legal_moves):
 	move_lookup = {chess.Move.from_uci(move): i for move, i in zip(labels, range(labels_n))}
 	policy = np.zeros(labels_n)
@@ -188,3 +189,8 @@ def cal_policy(labels, pol, legal_moves):
 		policy[move_lookup[move]] = pol[move_lookup[move]]
 	policy /= np.sum(policy)
 	return policy
+
+############################ Self Play utilities #########################################
+def state_key(board):
+	fen = board.rsplit(' ', 1) # drop the move clock
+	return fen[0]
