@@ -22,7 +22,7 @@ def get_dataset(num_samples = None):
 			except Exception:
 				break
 			res = game.headers["Result"]
-			#print(game)
+			print(game)
 			if res not in values:
 				continue
 			value = values[res]
@@ -64,7 +64,13 @@ def get_dataset_keras(num_samples = None):
 			#print(game)
 			gn += 1
 			result = game.headers["Result"]
-			value = values[result]
+			#value = values[result]
+			if result == '1-0':
+				black_win = -1
+			elif result == '0-1':
+				black_win = 1
+			else:
+				black_win = 0
 
 			white_elo, black_elo = int(game.headers["WhiteElo"]), int(game.headers["BlackElo"])
 			white_weight = util.clip_elo_policy(white_elo) 
@@ -85,7 +91,11 @@ def get_dataset_keras(num_samples = None):
 				
 				move_number = int(board.fen().split(' ')[5])
 				value_certainty = min(5, move_number) / 5
-				sl_value = (value * value_certainty) + util.valuefn(board.fen(), False)*(1 - value_certainty)
+				#sl_value = (value * value_certainty) + util.valuefn(board.fen(), False)*(1 - value_certainty)
+				if board.turn == chess.WHITE:
+					sl_value = (-black_win * value_certainty) + util.valuefn(board.fen(), False)*(1 - value_certainty)
+				else:
+					sl_value = (black_win * value_certainty) + util.valuefn(board.fen(), False)*(1 - value_certainty)
 				value_list.append(sl_value)
 
 				#print(len(input_planes), len(policy_list), len(value_list), value_list[-1])
@@ -93,9 +103,9 @@ def get_dataset_keras(num_samples = None):
 				board.push_uci(actions[k])
 				print("[INFO] Game: {}; Total board positions: {}".format(gn, board_positions))
 
-			if board_positions > num_samples:
+			if (board_positions > num_samples) or (gn >= 10000):
 				print("[INFO] Total games: ", gn, "Board positions: ", board_positions)
-				return input_planes, policy_list, value_list
+				return input_planes, policy_list, value_list, gn
 		#break
 	print("[INFO] Total games: ", gn, "Board positions: ", board_positions)
 
@@ -108,11 +118,11 @@ if __name__ == "__main__":
 
 	if args.type == "pytorch":
 		X, Y = get_dataset(args.n)
-		np.savez(os.path.join("processed", "temp.npz"), X, Y)
+		np.savez(os.path.join("processed", "dataset.npz"), X, Y)
 	elif args.type == "keras":
-		state_list, policy_list, value_list = get_dataset_keras(args.n)
+		state_list, policy_list, value_list, games = get_dataset_keras(args.n)
 		temp = [state_list, policy_list, value_list]
-		np.savez(os.path.join("processed", "temp2.npz"), state_list, policy_list, value_list)
+		np.savez(os.path.join("processed", "dataset_keras_{}_1M.npz".format(games)), state_list, policy_list, value_list)
 		#with open(os.path.join("processed", "dataset_keras.pickle"), 'wb') as file:
 		#	pickle.dump(temp, file)
 	else:
