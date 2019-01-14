@@ -10,8 +10,8 @@ Four different AIs were created which are as follows:
 	
 	* Alpha-beta algorithm with classical value function
 	* Alpha-beta algorithm with value network (pyTorch)
-	* Policy and value network without Monte Carlo Tree Search
-	* Policy and value network with Monte Carlo Tree Search
+	* Policy and value network without Monte Carlo Tree Search (keras with tensorflow backend)
+	* Policy and value network with Monte Carlo Tree Search (keras with tensorflow backend)
 
 ## Requirements:
 
