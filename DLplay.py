@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 class Valuator(object):
 
 	def __init__(self):
-		vals = torch.load("nets/value_1M_new.pth", map_location = lambda storage, loc: storage)
+		vals = torch.load("nets/value_2M.pth", map_location = lambda storage, loc: storage)
 		self.model = Net()
 		self.model.load_state_dict(vals)
 	
